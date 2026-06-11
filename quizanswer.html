@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Masters</title>
+    <link rel="stylesheet" href="quizanswer.css">
+    <script defer src="quizanswer.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Quiz Masters</h1>
+        <p>Punten: <span id="totalScore">0</span></p>
+    </header>
+
+    <main>
+        <div class="quiz-container">
+            <div id="question_id" class="question-card">
+                <h2 id="question_text">Wat is de hoofdstad van Frankrijk?</h2>
+
+                <div id="question_options" class="options-container">
+                    <div class="option">
+                        <input type="radio" name="answer" id="option_1" value="option_1">
+                        <label for="option_1">Londen</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" name="answer" id="option_2" value="option_2">
+                        <label for="option_2">Parijs</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" name="answer" id="option_3" value="option_3">
+                        <label for="option_3">Berlijn</label>
+                    </div>
+                    <div class="option">
+                        <input type="radio" name="answer" id="option_4" value="option_4">
+                        <label for="option_4">Madrid</label>
+                    </div>
+                </div>
+
+                <button class="submit-btn" id="submitBtn">Antwoord controleren</button>
+                <div id="feedback" class="feedback"></div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
