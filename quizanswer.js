@@ -28,7 +28,7 @@ const questions = [
 let currentIndex = 0;
 
 // Event listener
-submitBtn.addEventListener('click', handleSubmit);
+submitBtn.addEventListener('click', handleSubmit); 
 
 function renderQuestion() {
   const q = questions[currentIndex];
@@ -74,6 +74,18 @@ function handleSubmit() {
   const q = questions[currentIndex];
   const chosen = parseInt(selected.value, 10);
   const correct = q.correctIndex === chosen;
+  // Opslaan in database
+  fetch('save_answer.php', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+          question: q.text,
+          answer: q.options[q.correctIndex],
+          input: q.options[chosen]
+      })
+  });
   if (correct) {
     totalScore++;
     scoreValue.textContent = totalScore;
@@ -92,7 +104,7 @@ function handleSubmit() {
     // sla score op en navigeer
     localStorage.setItem('quizScore', String(totalScore));
     localStorage.setItem('quizTotal', String(questions.length));
-    setTimeout(() => { window.location.href = 'results.html'; }, 900);
+    setTimeout(() => { window.location.href = 'results.php'; }, 900); 
   } else {
     // ga naar volgende vraag na korte delay
     setTimeout(() => {
@@ -100,6 +112,7 @@ function handleSubmit() {
       renderQuestion();
     }, 900);
   }
+  
 }
 
 // Start
