@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+    <style>
+        body {
+            background-color: #e9eff6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            color: #1A3A5F;
+        }
+
+        header {
+            width: 100%;
+            max-width: 800px;
+            background-color: #1A3A5F;
+            color: white;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            border-bottom: 4px solid #162F4D;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #F4F7FA;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            margin-top: 0;
+            padding: 30px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .leaderboard-list {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .leaderboard-list th,
+        .leaderboard-list td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #d9e2ef;
+            text-align: left;
+        }
+
+        .leaderboard-list th {
+            background-color: #dde7f1;
+            color: #1A3A5F;
+            font-weight: 700;
+        }
+
+        .leaderboard-list tr:last-child td {
+            border-bottom: none;
+        }
+
+        .empty-state {
+            margin-top: 30px;
+            font-size: 18px;
+            color: #4d6584;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 25px;
+        }
+
+        .actions button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #1A3A5F;
+            color: white;
+            font-size: 16px;
+            transition: background-color 0.2s ease;
+        }
+
+        .actions button:hover {
+            background-color: #162F4D;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Leaderboard</h1>
+    </header>
+    <div class="container">
+        <p>Top scores van spelers die de quiz hebben voltooid.</p>
+
+        <table class="leaderboard-list" id="leaderboardTable">
+            <thead>
+                <tr>
+                    <th>Positie</th>
+                    <th>Naam</th>
+                    <th>Score</th>
+                    <th>Datum</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+        </table>
+
+        <p class="empty-state" id="emptyState">Geen scores gevonden. Speel de quiz eerst!</p>
+
+        <div class="actions">
+            <button id="playAgainBtn">Opnieuw spelen</button>
+            <button id="clearBtn">Leaderboard leegmaken</button>
+        </div>
+    </div>
+
+    <script>
+        const leaderboardBody = document.getElementById('leaderboardBody');
+        const emptyState = document.getElementById('emptyState');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('nl-NL', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function loadLeaderboard() {
+            const raw = localStorage.getItem('quizLeaderboard');
+            if (!raw) {
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            const list = JSON.parse(raw);
+            if (!Array.isArray(list) || list.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            leaderboardBody.innerHTML = '';
+            list.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${entry.name}</td>
+                    <td>${entry.score} / ${entry.total}</td>
+                    <td>${formatDate(entry.date)}</td>
+                `;
+                leaderboardBody.appendChild(row);
+            });
+        }
+
+        playAgainBtn.addEventListener('click', () => {
+            window.location.href = 'quizanswer.html';
+        });
+
+        clearBtn.addEventListener('click', () => {
+            localStorage.removeItem('quizLeaderboard');
+            loadLeaderboard();
+        });
+
+        loadLeaderboard();
+    </script>
+</body>
+</html>
