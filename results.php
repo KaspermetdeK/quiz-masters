@@ -1,17 +1,39 @@
 <?php
-$conn = new mysqli("localhost", "root", "", "results");
 
-if ($conn->connect_error) {
-    die("Database fout: " . $conn->connect_error);
-}
+session_start();
+
+$host = 'localhost';
+$dbname = 'results';
+$username = 'bit_academy';
+$password = 'bit_academy';
+
+$db = new PDO(
+    "mysql:host=$host;dbname=$dbname;charset=utf8",
+    $username,
+    $password
+);
+
+$query = $db->prepare("SELECT * FROM questions ORDER BY id ASC");
+$query->execute();
+
+$questions = $query->fetchAll(PDO::FETCH_ASSOC);
 
 if (isset($_GET['reset'])) {
+    $conn = new mysqli("localhost", "root", "", "results");
+
+    if ($conn->connect_error) {
+        die("Database fout: " . $conn->connect_error);
+    }
+
     $conn->query("TRUNCATE TABLE questions");
 
-    header("Location: quizanswers.html");
+    $conn->close();
+
+    header("Location: quizanswer.html");
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -105,7 +127,9 @@ if (isset($_GET['reset'])) {
         </div>
 
         <button id="saveBtn">Opslaan op leaderboard</button>
-        <button onclick="window.location.href='quizanswer.html'">Opnieuw spelen</button>
+        <button onclick="window.location.href='results.php?reset=1'">
+            Opnieuw spelen
+        </button>
     </div>
 
     <script>
