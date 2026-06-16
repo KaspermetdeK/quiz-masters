@@ -115,8 +115,9 @@
 
         const existing = localStorage.getItem('quizLeaderboard');
         const leaderboard = existing ? JSON.parse(existing) : [];
+
         leaderboard.push({
-            name,
+            name, 
             score,
             total,
             date: new Date().toISOString()
@@ -124,7 +125,8 @@
 
         leaderboard.sort((a, b) => b.score - a.score || new Date(a.date) - new Date(b.date));
         localStorage.setItem('quizLeaderboard', JSON.stringify(leaderboard));
-        window.location.href = 'leaderboard.html';
+
+        window.location.href = 'leaderboard.php';
     });
     </script>
 
