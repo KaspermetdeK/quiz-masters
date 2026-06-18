@@ -1,19 +1,3 @@
-<?php
-
-session_start();
-
-$host = 'localhost';
-$dbname = 'netland';
-$username = 'bit_academy';
-$password = 'bit_academy';
-
-$db = new PDO("mysql:host=localhost;dbname=netland", "bit_academy", "bit_academy");
-
-$query = $db->prepare("SELECT * FROM teams ORDER BY title ASC");
-$query->execute();
-$teams = $query->fetchAll(PDO::FETCH_ASSOC);
-?>
-
 <!DOCTYPE html>
 <html lang="nl">
 
@@ -44,6 +28,8 @@ $teams = $query->fetchAll(PDO::FETCH_ASSOC);
             text-align: center;
             border-bottom: 4px solid #162F4D;
             border-radius: 12px 12px 0 0;
+            font-size: 26px;
+            font-weight: bold;
         }
 
         .container {
@@ -65,6 +51,7 @@ $teams = $query->fetchAll(PDO::FETCH_ASSOC);
             padding: 12px 15px;
             border-bottom: 1px solid #d9e2ef;
             text-align: left;
+            word-break: break-word;
         }
 
         th {
@@ -92,13 +79,59 @@ $teams = $query->fetchAll(PDO::FETCH_ASSOC);
         button:hover {
             background-color: #162F4D;
         }
+
+        @media (max-width: 650px) {
+            header {
+                font-size: 22px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            button {
+                width: 100%;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 550px) {
+            th {
+                display: none;
+            }
+
+            table, tbody, tr, td {
+                display: block;
+                width: 100%;
+            }
+
+            tr {
+                margin-bottom: 15px;
+                background: white;
+                padding: 12px;
+                border-radius: 10px;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            }
+
+            td {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 5px;
+                font-size: 14px;
+            }
+
+            td::before {
+                content: attr(data-label);
+                font-weight: bold;
+                color: #1A3A5F;
+                margin-right: 10px;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <header>
-        <h1>Leaderboard</h1>
-    </header>
+    <header>Leaderboard</header>
 
     <div class="container">
         <table>
@@ -132,10 +165,12 @@ $teams = $query->fetchAll(PDO::FETCH_ASSOC);
         }
 
         const raw = localStorage.getItem("quizLeaderboard");
+
         if (!raw) {
             emptyState.style.display = "block";
         } else {
             const list = JSON.parse(raw);
+
             if (list.length === 0) {
                 emptyState.style.display = "block";
             } else {
@@ -144,35 +179,24 @@ $teams = $query->fetchAll(PDO::FETCH_ASSOC);
                 list.forEach((entry, index) => {
                     const row = document.createElement("tr");
 
-                    const pos = document.createElement("td");
-                    pos.textContent = index + 1;
-
-                    const name = document.createElement("td");
-                    name.textContent = entry.name; // ← toont letterlijk wat je typt
-
-                    const score = document.createElement("td");
-                    score.textContent = `${entry.score} / ${entry.total}`;
-
-                    const date = document.createElement("td");
-                    date.textContent = formatDate(entry.date);
-
-                    row.appendChild(pos);
-                    row.appendChild(name);
-                    row.appendChild(score);
-                    row.appendChild(date);
+                    row.innerHTML = `
+                        <td data-label="Positie">${index + 1}</td>
+                        <td data-label="Naam">${entry.name.replace(/</g, "&lt;")}</td>
+                        <td data-label="Score">${entry.score} / ${entry.total}</td>
+                        <td data-label="Datum">${formatDate(entry.date)}</td>
+                    `;
 
                     leaderboardBody.appendChild(row);
                 });
             }
         }
 
-        // ⭐ Buttons werkend maken
         document.getElementById("playAgainBtn").onclick = () => {
-            window.location.href = "quizanswer.html";
+            window.location.href = "quiz.overzicht.php";
         };
 
         document.getElementById("mainMenuBtn").onclick = () => {
-            window.location.href = "quiz.overzicht.php"; // pas aan naar jouw main menu pagina
+            window.location.href = "quiz.overzicht.php";
         };
 
         document.getElementById("clearLeaderboardBtn").onclick = () => {
@@ -183,3 +207,4 @@ $teams = $query->fetchAll(PDO::FETCH_ASSOC);
 
 </body>
 </html>
+
