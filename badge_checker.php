@@ -14,7 +14,7 @@ function give_badge($conn, $user_id, $badge_name) {
 
     $badge_id = $badge["badge_id"];
 
-    $check = $conn->prepare("SELECT id FROM user_badges WHERE user_id=? AND badge_id=?");
+    $check = $conn->prepare("SELECT badge_id FROM user_badges WHERE user_id=? AND badge_id=?");
     $check->bind_param("ii", $user_id, $badge_id);
     $check->execute();
     $exists = $check->get_result();
@@ -25,5 +25,5 @@ function give_badge($conn, $user_id, $badge_name) {
         $insert->execute();
     }
 }
-?>
+
 
