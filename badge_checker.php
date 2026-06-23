@@ -1,16 +1,29 @@
 <?php
 
-function give_badge($conn, $user_id, $badge_name, $badge_icon) {
-    $check = $conn->prepare("SELECT badge_name FROM user_badges WHERE user_id=? AND badge_name=?");
-    $check->bind_param("is", $user_id, $badge_name);
-    $check->execute();
-    $result = $check->get_result();
+function give_badge($conn, $user_id, $badge_name) {
 
-    if ($result->num_rows === 0) {
-        $stmt = $conn->prepare("INSERT INTO user_badges (user_id, badge_name, badge_icon) VALUES (?, ?, ?)");
-        $stmt->bind_param("iss", $user_id, $badge_name, $badge_icon);
-        $stmt->execute();
+    $stmt = $conn->prepare("SELECT badge_id FROM badges WHERE naam = ?");
+    $stmt->bind_param("s", $badge_name);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $badge = $result->fetch_assoc();
+
+    if (!$badge) {
+        return;
+    }
+
+    $badge_id = $badge["badge_id"];
+
+    $check = $conn->prepare("SELECT id FROM user_badges WHERE user_id=? AND badge_id=?");
+    $check->bind_param("ii", $user_id, $badge_id);
+    $check->execute();
+    $exists = $check->get_result();
+
+    if ($exists->num_rows === 0) {
+        $insert = $conn->prepare("INSERT INTO user_badges (user_id, badge_id) VALUES (?, ?)");
+        $insert->bind_param("ii", $user_id, $badge_id);
+        $insert->execute();
     }
 }
-
 ?>
+
