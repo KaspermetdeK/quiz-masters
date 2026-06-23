@@ -49,13 +49,15 @@ $last_quiz = $last_stmt->get_result()->fetch_assoc();
 
 
 $badges_stmt = $conn->prepare("
-    SELECT badge_name, badge_icon 
-    FROM user_badges 
-    WHERE user_id = ?
+    SELECT b.naam, b.icoon
+    FROM user_badges ub
+    JOIN badges b ON b.badge_id = ub.badge_id
+    WHERE ub.user_id = ?
 ");
 $badges_stmt->bind_param("i", $user_id);
 $badges_stmt->execute();
 $badges = $badges_stmt->get_result();
+
 
 
 $history_stmt = $conn->prepare("
@@ -142,12 +144,14 @@ $history = $history_stmt->get_result();
             text-align: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         .badge-square-img {
             width: 100%;
             height: 80px;
             object-fit: cover;
             border-radius: 8px;
         }
+
         .badge-square-text {
             margin-top: 6px;
             font-size: 14px;
@@ -205,14 +209,15 @@ $history = $history_stmt->get_result();
             <?php if ($badges->num_rows > 0): ?>
                 <?php while ($badge = $badges->fetch_assoc()): ?>
                     <div class="badge-square">
-                        <img src="<?= $badge['badge_icon'] ?>" alt="<?= $badge['badge_name'] ?>" class="badge-square-img">
-                        <p class="badge-square-text"><?= htmlspecialchars($badge['badge_name']) ?></p>
+                        <img src="<?= $badge['icoon'] ?>" alt="<?= $badge['naam'] ?>" class="badge-square-img">
+                        <p class="badge-square-text"><?= htmlspecialchars($badge['naam']) ?></p>
                     </div>
                 <?php endwhile; ?>
             <?php else: ?>
                 <p>Je hebt nog geen badges.</p>
             <?php endif; ?>
         </div>
+
 
 
 
