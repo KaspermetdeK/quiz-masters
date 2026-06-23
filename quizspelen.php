@@ -41,6 +41,7 @@ if (!isset($_COOKIE["quiz_score"])) {
 }
 
 if ($index >= count($vragen_lijst)) {
+
     $score = floatval($_COOKIE["quiz_score"] ?? 0);
     $total = count($vragen_lijst);
     $totalTime = intval($_COOKIE["quiz_time"] ?? 0);
@@ -48,25 +49,32 @@ if ($index >= count($vragen_lijst)) {
     setcookie("quiz_score", "", time() - 3600);
     setcookie("quiz_time", "", time() - 3600);
 
-    $user_id = $_SESSION["user_id"];
+    $user_id = $_SESSION["user_id"] ?? null;
 
     include "badge_checker.php";
 
-    give_badge($conn, $user_id, "Eerste Quiz", "icons/first.png");
+    if ($user_id !== null) {
 
-    if ($score == $total) {
-        give_badge($conn, $user_id, "Perfecte Score", "icons/perfect.png");
+        give_badge($conn, $user_id, "Eerste Quiz");
+
+        if ($score == $total) {
+            give_badge($conn, $user_id, "Perfecte Score");
+        }
+
+        if ($totalTime < 30) {
+            give_badge($conn, $user_id, "Snelheidsduivel");
+        }
+
+        $played = $conn->query("SELECT COUNT(*) AS t FROM leaderboard WHERE user_id=$user_id")->fetch_assoc()['t'];
+        if ($played >= 10) {
+            give_badge($conn, $user_id, "10 Quizzes");
+        }
+
+        $stmt = $conn->prepare("INSERT INTO leaderboard (user_id, quiz_id, score) VALUES (?, ?, ?)");
+        $stmt->bind_param("iii", $user_id, $quiz_id, $score);
+        $stmt->execute();
     }
 
-    if ($totalTime < 30) {
-        give_badge($conn, $user_id, "Snelheidsduivel", "https://i.pinimg.com/originals/f7/e2/22/f7e222b8be3bfc3778dacd58888f2c53.jpg");
-
-    }
-
-    $played = $conn->query("SELECT COUNT(*) AS t FROM leaderboard WHERE quiz_id=$quiz_id")->fetch_assoc()['t'];
-    if ($played >= 10) {
-        give_badge($conn, $user_id, "10 Quizzen", "icons/10.png");
-    }
 
 
 
