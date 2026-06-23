@@ -1,209 +1,161 @@
+<?php
+$host = 'localhost';
+$dbname = 'quizmaker';
+$username = 'bit_academy';
+$password = 'bit_academy';
+
+$conn = new mysqli($host, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Database fout: " . $conn->connect_error);
+}
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $quiz_id = intval($_POST["quiz_id"]);
+    $name = $_POST["name"];
+    $score = floatval($_POST["score"]);
+    $total = intval($_POST["total"]);
+
+    $stmt = $conn->prepare("INSERT INTO leaderboard (quiz_id, name, score, total) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("isdi", $quiz_id, $name, $score, $total);
+    $stmt->execute();
+
+    header("Location: leaderboard.php?quiz_id=" . $quiz_id);
+    exit;
+}
+
+if (!isset($_GET["quiz_id"])) {
+    header("Location: leaderboard_select.php");
+    exit;
+}
+
+
+
+$quiz_id = intval($_GET["quiz_id"]);
+
+$result = $conn->query("SELECT * FROM leaderboard WHERE quiz_id = $quiz_id ORDER BY score DESC, date ASC");
+$scores = $result->fetch_all(MYSQLI_ASSOC);
+?>
 <!DOCTYPE html>
 <html lang="nl">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leaderboard</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaderboard</title>
 
-    <style>
-        body {
-            background-color: #e9eff6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            color: #1A3A5F;
-        }
+<style>
+    body {
+        background-color: #e9eff6;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+        color: #1A3A5F;
+    }
 
-        header {
-            width: 100%;
-            max-width: 800px;
-            background-color: #1A3A5F;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-bottom: 4px solid #162F4D;
-            border-radius: 12px 12px 0 0;
-            font-size: 26px;
-            font-weight: bold;
-        }
+    header {
+        width: 100%;
+        max-width: 800px;
+        background-color: #1A3A5F;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        border-bottom: 4px solid #162F4D;
+        border-radius: 12px 12px 0 0;
+        font-size: 26px;
+        font-weight: bold;
+    }
 
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background-color: #F4F7FA;
-            border-radius: 0 0 15px 15px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-            padding: 30px;
-        }
+    .container {
+        width: 100%;
+        max-width: 800px;
+        background-color: #F4F7FA;
+        border-radius: 0 0 15px 15px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        padding: 30px;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
 
-        th, td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #d9e2ef;
-            text-align: left;
-            word-break: break-word;
-        }
+    th, td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #d9e2ef;
+        text-align: left;
+    }
 
-        th {
-            background-color: #dde7f1;
-            font-weight: 700;
-        }
+    th {
+        background-color: #dde7f1;
+        font-weight: 700;
+    }
 
-        .actions {
-            margin-top: 25px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+    .actions {
+        margin-top: 25px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
 
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            background-color: #1A3A5F;
-            color: white;
-            font-size: 16px;
-        }
+    button {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        background-color: #1A3A5F;
+        color: white;
+        font-size: 16px;
+    }
 
-        button:hover {
-            background-color: #162F4D;
-        }
-
-        @media (max-width: 650px) {
-            header {
-                font-size: 22px;
-            }
-
-            .container {
-                padding: 20px;
-            }
-
-            button {
-                width: 100%;
-                font-size: 15px;
-            }
-        }
-
-        @media (max-width: 550px) {
-            th {
-                display: none;
-            }
-
-            table, tbody, tr, td {
-                display: block;
-                width: 100%;
-            }
-
-            tr {
-                margin-bottom: 15px;
-                background: white;
-                padding: 12px;
-                border-radius: 10px;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            }
-
-            td {
-                display: flex;
-                justify-content: space-between;
-                padding: 8px 5px;
-                font-size: 14px;
-            }
-
-            td::before {
-                content: attr(data-label);
-                font-weight: bold;
-                color: #1A3A5F;
-                margin-right: 10px;
-            }
-        }
-    </style>
+    button:hover {
+        background-color: #162F4D;
+    }
+</style>
 </head>
 
 <body>
-    <header>Leaderboard</header>
 
-    <div class="container">
-        <table>
-            <thead>
+<header>Leaderboard</header>
+
+<div class="container">
+
+    <?php if (count($scores) === 0): ?>
+        <p>Geen scores gevonden.</p>
+    <?php else: ?>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Positie</th>
+                <th>Naam</th>
+                <th>Score</th>
+                <th>Datum</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($scores as $i => $row): ?>
                 <tr>
-                    <th>Positie</th>
-                    <th>Naam</th>
-                    <th>Score</th>
-                    <th>Datum</th>
+                    <td><?= $i + 1 ?></td>
+                    <td><?= htmlspecialchars($row["name"]) ?></td>
+                    <td><?= round($row["score"], 2) ?> / <?= $row["total"] ?></td>
+                    <td><?= $row["date"] ?></td>
                 </tr>
-            </thead>
-            <tbody id="leaderboardBody"></tbody>
-        </table>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
 
-        <p id="emptyState">Geen scores gevonden.</p>
+    <?php endif; ?>
 
-        <div class="actions">
-            <button id="playAgainBtn">Opnieuw spelen</button>
-            <button id="mainMenuBtn">Main Menu</button>
-            <button id="clearLeaderboardBtn">Leaderboard leegmaken</button>
-        </div>
+    <div class="actions">
+        <button onclick="window.location.href='quiz.overzicht.php'">Terug naar menu</button>
     </div>
 
-    <script>
-        const leaderboardBody = document.getElementById("leaderboardBody");
-        const emptyState = document.getElementById("emptyState");
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleString("nl-NL");
-        }
-
-        const raw = localStorage.getItem("quizLeaderboard");
-
-        if (!raw) {
-            emptyState.style.display = "block";
-        } else {
-            const list = JSON.parse(raw);
-
-            if (list.length === 0) {
-                emptyState.style.display = "block";
-            } else {
-                emptyState.style.display = "none";
-
-                list.forEach((entry, index) => {
-                    const row = document.createElement("tr");
-
-                    row.innerHTML = `
-                        <td data-label="Positie">${index + 1}</td>
-                        <td data-label="Naam">${entry.name.replace(/</g, "&lt;")}</td>
-                        <td data-label="Score">${entry.score} / ${entry.total}</td>
-                        <td data-label="Datum">${formatDate(entry.date)}</td>
-                    `;
-
-                    leaderboardBody.appendChild(row);
-                });
-            }
-        }
-
-        document.getElementById("playAgainBtn").onclick = () => {
-            window.location.href = "quiz.overzicht.php";
-        };
-
-        document.getElementById("mainMenuBtn").onclick = () => {
-            window.location.href = "quiz.overzicht.php";
-        };
-
-        document.getElementById("clearLeaderboardBtn").onclick = () => {
-            localStorage.removeItem("quizLeaderboard");
-            location.reload();
-        };
-    </script>
+</div>
 
 </body>
 </html>
