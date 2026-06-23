@@ -160,3 +160,4 @@ $scores = $result->fetch_all(MYSQLI_ASSOC);
 </body>
 </html>
 
+
