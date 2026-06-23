@@ -1,4 +1,6 @@
 <?php
+session_start();
+
 $host = 'localhost';
 $dbname = 'quizmaker';
 $username = 'bit_academy';
@@ -26,146 +28,187 @@ $vragen_lijst = $vragen->fetch_all(MYSQLI_ASSOC);
 
 $index = isset($_GET['q']) ? intval($_GET['q']) : 0;
 
+if (!isset($_GET['q'])) {
+    setcookie("quiz_time", 0, time() + 3600);
+}
+
+if (!isset($_COOKIE["quiz_time"])) {
+    setcookie("quiz_time", 0, time() + 3600);
+}
+
+if (!isset($_COOKIE["quiz_score"])) {
+    setcookie("quiz_score", 0, time() + 3600);
+}
+
 if ($index >= count($vragen_lijst)) {
-
-    $score = intval($_COOKIE["quiz_score"] ?? 0);
+    $score = floatval($_COOKIE["quiz_score"] ?? 0);
     $total = count($vragen_lijst);
-
     $totalTime = intval($_COOKIE["quiz_time"] ?? 0);
 
     setcookie("quiz_score", "", time() - 3600);
     setcookie("quiz_time", "", time() - 3600);
-    ?>
 
-<!DOCTYPE html>
-<html lang="nl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Resultaat</title>
+    $user_id = $_SESSION["user_id"];
 
-<style>
-    body {
-        background-color: #e9eff6;
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 20px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
+    include "badge_checker.php";
+
+    give_badge($conn, $user_id, "Eerste Quiz", "icons/first.png");
+
+    if ($score == $total) {
+        give_badge($conn, $user_id, "Perfecte Score", "icons/perfect.png");
     }
 
-    .box {
-        background: white;
-        padding: 30px;
-        max-width: 420px;
-        width: 100%;
-        border-radius: 16px;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        text-align: center;
+    if ($totalTime < 30) {
+        give_badge($conn, $user_id, "Snelheidsduivel", "https://i.pinimg.com/originals/f7/e2/22/f7e222b8be3bfc3778dacd58888f2c53.jpg");
+
     }
 
-    h1, h2 {
-        color: #1A3A5F;
+    $played = $conn->query("SELECT COUNT(*) AS t FROM leaderboard WHERE quiz_id=$quiz_id")->fetch_assoc()['t'];
+    if ($played >= 10) {
+        give_badge($conn, $user_id, "10 Quizzen", "icons/10.png");
     }
 
-    input {
-        padding: 12px;
-        width: 100%;
-        border-radius: 10px;
-        border: 1px solid #ccc;
-        margin-top: 10px;
-        font-size: 16px;
-        box-sizing: border-box;
-    }
 
-    button {
-        padding: 14px;
-        width: 100%;
-        background: #1A3A5F;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: 16px;
-        margin-top: 15px;
-    }
 
-    button:hover {
-        background: #162F4D;
-    }
-</style>
-</head>
+?>
+    <!DOCTYPE html>
+    <html lang="nl">
 
-<body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Resultaat</title>
+        <style>
+            body {
+                background-color: #e9eff6;
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+            }
 
-<div class="box">
-    <h1>Je bent klaar!</h1>
-    <p>Je score:</p>
-    <h2><?= $score ?> / <?= $total ?></h2>
+            .box {
+                background: white;
+                padding: 30px;
+                max-width: 420px;
+                width: 100%;
+                border-radius: 16px;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+                text-align: center;
+            }
 
-    <p>Tijd bezig:</p>
-    <h2>
-        <?php
-        $min = floor($totalTime / 60);
-        $sec = $totalTime % 60;
-        echo $min . ":" . str_pad($sec, 2, "0", STR_PAD_LEFT);
-        ?>
-    </h2>
+            h1,
+            h2 {
+                color: #1A3A5F;
+            }
 
-    <p>Naam voor leaderboard:</p>
-    <input type="text" id="playerName" placeholder="Jouw naam">
+            input {
+                padding: 12px;
+                width: 100%;
+                border-radius: 10px;
+                border: 1px solid #ccc;
+                margin-top: 10px;
+                font-size: 16px;
+                box-sizing: border-box;
+            }
 
-    <button onclick="saveScore()">Opslaan</button>
-    <button onclick="window.location.href='quiz.overzicht.php'">Terug naar menu</button>
-</div>
+            button {
+                padding: 14px;
+                width: 100%;
+                background: #1A3A5F;
+                color: white;
+                border: none;
+                border-radius: 10px;
+                cursor: pointer;
+                font-size: 16px;
+                margin-top: 15px;
+            }
 
-<script>
-function saveScore() {
-    const name = document.getElementById("playerName").value.trim();
-    if (!name) return;
+            button:hover {
+                background: #162F4D;
+            }
+        </style>
+    </head>
 
-    const score = <?= $score ?>;
-    const total = <?= $total ?>;
+    <body>
+        <div class="box">
+            <h1>Je bent klaar!</h1>
+            <p>Je score:</p>
+            <h2><?= round($score, 2) ?> / <?= $total ?></h2>
+            <p>Tijd bezig:</p>
+            <h2>
+                <?php
+                $min = floor($totalTime / 60);
+                $sec = $totalTime % 60;
+                echo $min . ":" . str_pad($sec, 2, "0", STR_PAD_LEFT);
+                ?>
+            </h2>
+            <p>Naam voor leaderboard:</p>
+            <input type="text" id="playerName" placeholder="Jouw naam">
+            <button onclick="saveScore()">Opslaan</button>
+            <button onclick="window.location.href='quiz.overzicht.php'">Terug naar menu</button>
+        </div>
+        <script>
+            function saveScore() {
+                const name = document.getElementById("playerName").value.trim();
+                if (!name) return;
 
-    const existing = localStorage.getItem("quizLeaderboard");
-    const leaderboard = existing ? JSON.parse(existing) : [];
+                const form = document.createElement("form");
+                form.method = "POST";
+                form.action = "leaderboard.php";
 
-    leaderboard.push({
-        name,
-        score,
-        total,
-        date: new Date().toISOString()
-    });
+                form.innerHTML = `
+                <input type="hidden" name="quiz_id" value="<?= $quiz_id ?>">
+                <input type="hidden" name="name" value="${name}">
+                <input type="hidden" name="score" value="<?= $score ?>">
+                <input type="hidden" name="total" value="<?= $total ?>">
+                <input type="hidden" name="time_spent" value="<?= $totalTime ?>">
+            `;
 
-    leaderboard.sort((a, b) => b.score - a.score);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        </script>
+    </body>
 
-    localStorage.setItem("quizLeaderboard", JSON.stringify(leaderboard));
-
-    window.location.href = "leaderboard.php";
-}
-</script>
-
-</body>
-</html>
-
+    </html>
 <?php
-exit;
+    exit;
 }
 
 $vraag = $vragen_lijst[$index];
 $vraag_id = $vraag['vraag_id'];
+$vraag_type = $vraag['vraag_type'];
 
 $antwoorden = $conn->query("SELECT * FROM antwoorden WHERE vraag_id = $vraag_id")->fetch_all(MYSQLI_ASSOC);
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $gekozen = intval($_POST["antwoord"]);
-    $correct = $conn->query("SELECT is_correct FROM antwoorden WHERE antwoord_id = $gekozen")->fetch_assoc()['is_correct'];
+    $huidige_score = floatval($_COOKIE["quiz_score"] ?? 0);
 
-    $huidige_score = intval($_COOKIE["quiz_score"] ?? 0);
-    if ($correct == 1) {
-        $huidige_score++;
+    if ($vraag_type === "multiple") {
+        $gekozen = $_POST["antwoord"] ?? [];
+        if (!is_array($gekozen)) $gekozen = [$gekozen];
+
+        $correcte = array_filter($antwoorden, fn($a) => $a["is_correct"] == 1);
+        $correct_ids = array_column($correcte, "antwoord_id");
+
+        $goed_gekozen = count(array_intersect($gekozen, $correct_ids));
+        $totaal_correct = count($correct_ids);
+
+        if ($totaal_correct > 0) {
+            $punten = $goed_gekozen / $totaal_correct;
+            $huidige_score += $punten;
+        }
+    } else {
+        $gekozen = intval($_POST["antwoord"]);
+        $correct = $conn->query("SELECT is_correct FROM antwoorden WHERE antwoord_id = $gekozen")->fetch_assoc()['is_correct'];
+
+        if ($correct == 1) {
+            $huidige_score += 1;
+        }
     }
 
     setcookie("quiz_score", $huidige_score, time() + 3600);
@@ -174,161 +217,152 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     exit;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="nl">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><?= htmlspecialchars($quiz['titel']) ?></title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= htmlspecialchars($quiz['titel']) ?></title>
+    <style>
+        body {
+            background-color: #F4F7FA;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
 
-<style>
-    body {
-        background-color: #F4F7FA;
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 20px;
-    }
+        header {
+            background: #1A3A5F;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            border-bottom: 4px solid #162F4D;
+            border-radius: 0 0 12px 12px;
+        }
 
-    header {
-        background: #1A3A5F;
-        color: white;
-        padding: 20px;
-        text-align: center;
-        font-size: 26px;
-        font-weight: bold;
-        border-bottom: 4px solid #162F4D;
-        border-radius: 0 0 12px 12px;
-    }
+        .container {
+            max-width: 700px;
+            margin: 30px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+        }
 
-    .container {
-        max-width: 700px;
-        margin: 30px auto;
-        background: white;
-        padding: 25px;
-        border-radius: 16px;
-        box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-    }
+        .time-spent {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1A3A5F;
+            margin-bottom: 15px;
+        }
 
-    .time-spent {
-        font-size: 18px;
-        font-weight: bold;
-        color: #1A3A5F;
-        margin-bottom: 15px;
-    }
+        .progress-wrapper {
+            width: 100%;
+            background-color: #dce4ef;
+            border-radius: 10px;
+            height: 16px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
 
-    .progress-wrapper {
-        width: 100%;
-        background-color: #dce4ef;
-        border-radius: 10px;
-        height: 16px;
-        margin-bottom: 20px;
-        overflow: hidden;
-    }
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #1A3A5F;
+            transition: width 0.4s ease;
+        }
 
-    .progress-bar {
-        height: 100%;
-        width: 0%;
-        background-color: #1A3A5F;
-        transition: width 0.4s ease;
-    }
+        h2,
+        h3 {
+            color: #1A3A5F;
+        }
 
-    h2, h3 {
-        color: #1A3A5F;
-    }
+        label {
+            display: block;
+            background: #eef3fa;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: 0.25s;
+            font-size: 16px;
+        }
 
-    label {
-        display: block;
-        background: #eef3fa;
-        padding: 14px;
-        border-radius: 10px;
-        margin-bottom: 12px;
-        cursor: pointer;
-        transition: 0.25s;
-        font-size: 16px;
-    }
+        label:hover {
+            background: #dce6f3;
+        }
 
-    label:hover {
-        background: #dce6f3;
-    }
+        input[type="checkbox"],
+        input[type="radio"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
 
-    input[type="radio"] {
-        margin-right: 10px;
-        transform: scale(1.2);
-    }
+        button {
+            padding: 14px;
+            width: 100%;
+            background: #1A3A5F;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 17px;
+            margin-top: 20px;
+        }
 
-    button {
-        padding: 14px;
-        width: 100%;
-        background: #1A3A5F;
-        color: white;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: 17px;
-        margin-top: 20px;
-    }
-
-    button:hover {
-        background: #162F4D;
-    }
-</style>
+        button:hover {
+            background: #162F4D;
+        }
+    </style>
 </head>
 
 <body>
-
-<header><?= htmlspecialchars($quiz['titel']) ?></header>
-
-<div class="container">
-
-    <div class="time-tspen">
-        Tijd bezig: <span id="timeSpent">0:00</span>
+    <header><?= htmlspecialchars($quiz['titel']) ?></header>
+    <div class="container">
+        <div class="time-spent">
+            Tijd bezig: <span id="timeSpent">0:00</span>
+        </div>
+        <div class="progress-wrapper">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <h2>Vraag <?= $index + 1 ?> van <?= count($vragen_lijst) ?></h2>
+        <h3><?= htmlspecialchars($vraag['vraagtekst']) ?></h3>
+        <form method="POST">
+            <?php if ($vraag_type === "multiple"): ?>
+                <?php foreach ($antwoorden as $antwoord): ?>
+                    <label>
+                        <input type="checkbox" name="antwoord[]" value="<?= $antwoord['antwoord_id'] ?>">
+                        <?= htmlspecialchars($antwoord['antwoordtekst']) ?>
+                    </label>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <?php foreach ($antwoorden as $antwoord): ?>
+                    <label>
+                        <input type="radio" name="antwoord" value="<?= $antwoord['antwoord_id'] ?>" required>
+                        <?= htmlspecialchars($antwoord['antwoordtekst']) ?>
+                    </label>
+                <?php endforeach; ?>
+            <?php endif; ?>
+            <button type="submit">Volgende</button>
+        </form>
     </div>
+    <script>
+        let current = <?= $index + 1 ?>;
+        let total = <?= count($vragen_lijst) ?>;
+        document.getElementById("progressBar").style.width = (current / total * 100) + "%";
 
-    <div class="progress-wrapper">
-        <div id="progressBar" class="progress-bar"></div>
-    </div>
+        let timeSpent = <?= intval($_COOKIE["quiz_time"] ?? 0) ?>;
 
-    <h2>Vraag <?= $index + 1 ?> van <?= count($vragen_lijst) ?></h2>
-    <h3><?= htmlspecialchars($vraag['vraagtekst']) ?></h3>
-
-    <form method="POST">
-        <?php foreach ($antwoorden as $antwoord): ?>
-            <label>
-                <input type="radio" name="antwoord" value="<?= $antwoord['antwoord_id'] ?>" required>
-                <?= htmlspecialchars($antwoord['antwoordtekst']) ?>
-            </label>
-        <?php endforeach; ?>
-
-        <button type="submit">Volgende</button>
-    </form>
-</div>
-
-<script>
-let current = <?= $index + 1 ?>;
-let total = <?= count($vragen_lijst) ?>;
-
-function updateProgress() {
-    const percent = (current / total) * 100;
-    document.getElementById("progressBar").style.width = percent + "%";
-}
-updateProgress();
-
-let timeSpent = <?= intval($_COOKIE["quiz_time"] ?? 0) ?>;
-
-function updateStopwatch() {
-    timeSpent++;
-    document.cookie = "quiz_time=" + timeSpent + "; path=/";
-
-    let minutes = Math.floor(timeSpent / 60);
-    let seconds = timeSpent % 60;
-
-    document.getElementById("timeSpent").textContent =
-        minutes + ":" + (seconds < 10 ? "0" + seconds : seconds);
-}
-
-setInterval(updateStopwatch, 1000);
-</script>
-
+        setInterval(() => {
+            timeSpent++;
+            document.cookie = "quiz_time=" + timeSpent + "; path=/";
+            document.getElementById("timeSpent").textContent =
+                Math.floor(timeSpent / 60) + ":" + String(timeSpent % 60).padStart(2, "0");
+        }, 1000);
+    </script>
 </body>
+
 </html>
