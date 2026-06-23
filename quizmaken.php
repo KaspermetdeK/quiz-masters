@@ -25,14 +25,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     foreach ($_POST["questions"] as $q) {
 
-        $stmtQ = $conn->prepare("INSERT INTO vragen (quiz_id, vraagtekst) VALUES (?, ?)");
-        $stmtQ->bind_param("is", $quiz_id, $q["text"]);
+        $vraagtekst = $q["text"];
+        $vraag_type = $q["type"];
+
+        $stmtQ = $conn->prepare("INSERT INTO vragen (quiz_id, vraagtekst, vraag_type) VALUES (?, ?, ?)");
+        $stmtQ->bind_param("iss", $quiz_id, $vraagtekst, $vraag_type);
         $stmtQ->execute();
 
         $vraag_id = $stmtQ->insert_id;
 
         foreach ($q["answers"] as $index => $answer) {
-            $is_correct = ($index == $q["correct"]) ? 1 : 0;
+
+            if ($vraag_type === "multiple") {
+                $is_correct = in_array($index, $q["correct"]) ? 1 : 0;
+            } else {
+                $is_correct = ($index == $q["correct"]) ? 1 : 0;
+            }
 
             $stmtA = $conn->prepare("INSERT INTO antwoorden (vraag_id, antwoordtekst, is_correct) VALUES (?, ?, ?)");
             $stmtA->bind_param("isi", $vraag_id, $answer, $is_correct);
@@ -46,6 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <!DOCTYPE html>
 <html lang="nl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,7 +67,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             font-family: Arial, sans-serif;
         }
 
-        /* HEADER */
         header {
             background: #1A3A5F;
             color: white;
@@ -69,14 +77,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             font-weight: bold;
         }
 
-        /* CONTAINER */
         .container {
             max-width: 900px;
             margin: 40px auto;
             background: white;
             padding: 30px;
             border-radius: 16px;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
         }
 
         label {
@@ -84,7 +91,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             color: #1A3A5F;
         }
 
-        input, textarea, select {
+        input,
+        textarea,
+        select {
             width: 100%;
             padding: 12px;
             margin: 10px 0 20px;
@@ -110,29 +119,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             background: #162F4D;
         }
 
-        .btn-maken {
-            display: block;
-            width: fit-content;
-            margin: 40px auto;
-            padding: 15px 35px;
-            background: #1A3A5F;
-            color: white;
-            text-decoration: none;
-            border-radius: 12px;
-            font-size: 20px;
-            font-weight: bold;
-            transition: 0.25s;
-            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
-        }
-
-        .btn-maken:hover {
-            background: #162F4D;
-            transform: scale(1.05);
-        }
-
         .add-btn {
             background: #2E7D32;
-            margin-bottom: 20px;
         }
 
         .add-btn:hover {
@@ -141,7 +129,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         .remove-btn {
             background: #C62828;
-            margin-top: 10px;
         }
 
         .remove-btn:hover {
@@ -156,34 +143,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             border-left: 6px solid #1A3A5F;
         }
 
-        .question-box h3 {
-            margin-top: 0;
-            color: #1A3A5F;
+        .btn-cancel-small {
+            background: #1A3A5F;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 15px;
+            display: block;
+            width: fit-content;
+            margin: 15px auto 0 auto;
+            text-align: center;
+            transition: 0.25s;
         }
 
-        /* RESPONSIVE */
-        @media (max-width: 600px) {
-            header {
-                font-size: 22px;
-            }
-
-            .container {
-                padding: 20px;
-            }
-
-            input, textarea, select {
-                font-size: 15px;
-                padding: 10px;
-            }
-
-            .btn {
-                font-size: 16px;
-                padding: 12px;
-            }
-
-            .question-box {
-                padding: 15px;
-            }
+        .btn-cancel-small:hover {
+            background: #11263d;
+            transform: scale(1.03);
         }
     </style>
 
@@ -203,6 +178,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label>Vraagtekst:</label>
                 <input type="text" name="questions[${questionCount}][text]" required>
 
+                <label>Vraagtype:</label>
+                <select name="questions[${questionCount}][type]" onchange="toggleCorrectInputs(${questionCount}, this.value)">
+                    <option value="single">Single choice</option>
+                    <option value="multiple">Multiple choice</option>
+                </select>
+
                 <label>Antwoord 1:</label>
                 <input type="text" name="questions[${questionCount}][answers][]" required>
 
@@ -215,51 +196,80 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label>Antwoord 4:</label>
                 <input type="text" name="questions[${questionCount}][answers][]" required>
 
-                <label>Correct antwoord (1-4):</label>
-                <select name="questions[${questionCount}][correct]" required>
-                    <option value="0">1</option>
-                    <option value="1">2</option>
-                    <option value="2">3</option>
-                    <option value="3">4</option>
-                </select>
+                <div id="correct-${questionCount}">
+                    <label>Correct antwoord:</label>
+                    <select name="questions[${questionCount}][correct]" required>
+                        <option value="0">Antwoord 1</option>
+                        <option value="1">Antwoord 2</option>
+                        <option value="2">Antwoord 3</option>
+                        <option value="3">Antwoord 4</option>
+                    </select>
+                </div>
 
                 <button type="button" class="btn remove-btn" onclick="this.parentElement.remove()">Verwijder vraag</button>
             `;
 
             container.appendChild(box);
         }
+
+        function toggleCorrectInputs(q, type) {
+            const correctDiv = document.getElementById(`correct-${q}`);
+
+            if (type === "single") {
+                correctDiv.innerHTML = `
+                    <label>Correct antwoord:</label>
+                    <select name="questions[${q}][correct]" required>
+                        <option value="0">Antwoord 1</option>
+                        <option value="1">Antwoord 2</option>
+                        <option value="2">Antwoord 3</option>
+                        <option value="3">Antwoord 4</option>
+                    </select>
+                `;
+            } else {
+                correctDiv.innerHTML = `
+                    <label>Correcte antwoorden:</label>
+                    <label><input type="checkbox" name="questions[${q}][correct][]" value="0"> Antwoord 1</label>
+                    <label><input type="checkbox" name="questions[${q}][correct][]" value="1"> Antwoord 2</label>
+                    <label><input type="checkbox" name="questions[${q}][correct][]" value="2"> Antwoord 3</label>
+                    <label><input type="checkbox" name="questions[${q}][correct][]" value="3"> Antwoord 4</label>
+                `;
+            }
+        }
     </script>
 </head>
 
 <body>
 
-<header>Maak je eigen Quiz</header>
+    <header>Maak je eigen Quiz</header>
 
-<div class="container">
+    <div class="container">
 
-    <form method="POST">
+        <form method="POST">
 
-        <label>Titel van de quiz:</label>
-        <input type="text" name="title" required>
+            <label>Titel van de quiz:</label>
+            <input type="text" name="title" required>
 
-        <label>Beschrijving:</label>
-        <textarea name="description" rows="3" required></textarea>
+            <label>Beschrijving:</label>
+            <textarea name="description" rows="3" required></textarea>
 
-        <label>Afbeelding URL:</label>
-        <input type="text" name="image" required>
+            <label>Afbeelding URL:</label>
+            <input type="text" name="image" required>
 
-        <h2 style="color:#1A3A5F;">Vragen</h2>
+            <h2 style="color:#1A3A5F;">Vragen</h2>
 
-        <div id="questions"></div>
+            <div id="questions"></div>
 
-        <button type="button" class="btn add-btn" onclick="addQuestion()">+ Voeg vraag toe</button>
+            <button type="button" class="btn add-btn" onclick="addQuestion()">+ Voeg vraag toe</button>
 
-        <button type="submit" class="btn">Quiz Opslaan</button>
+            <button type="submit" class="btn">Quiz Opslaan</button>
 
-        <a href="quiz.overzicht.php" class="btn-maken">Annuleren</a>
-    </form>
+            <a href="quiz.overzicht.php" class="btn-cancel-small">Annuleren</a>
 
-</div>
+
+        </form>
+
+    </div>
 
 </body>
+
 </html>
