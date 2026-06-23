@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 $host = 'localhost';
@@ -255,6 +256,8 @@ $result = $conn->query("SELECT * FROM quizzes ORDER BY aangemaakt_op DESC");
 <a href="quizmaken.php" class="btn-maken">Zelf een quiz maken</a>
 <a href="leaderboard.php" class="btn-maken">Leaderboard</a>
 
+
 </body>
 </html>
+
 
