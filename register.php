@@ -148,5 +148,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <p>Heb je al een account? <a href="login.php">Inloggen</a></p>
 </div>
 
+
+
 </body>
 </html>
+
