@@ -34,17 +34,18 @@ if (!$user) {
 }
 
 
-$stats_stmt = $conn->prepare("
-    SELECT 
-        COUNT(*) AS quizzes_gespeeld,
-        AVG(score) AS gemiddelde_score,
-        MAX(score) AS beste_score
-    FROM user_quiz_scores
-    WHERE user_id = ?
+
+$last_stmt = $conn->prepare("
+    SELECT q.titel, uqs.gespeeld_op 
+    FROM user_quiz_scores uqs
+    JOIN quizzes q ON q.quiz_id = uqs.quiz_id
+    WHERE uqs.user_id = ?
+    ORDER BY uqs.gespeeld_op DESC
+    LIMIT 1
 ");
-$stats_stmt->bind_param("i", $user_id);
-$stats_stmt->execute();
-$stats = $stats_stmt->get_result()->fetch_assoc();
+$last_stmt->bind_param("i", $user_id);
+$last_stmt->execute();
+$last_quiz = $last_stmt->get_result()->fetch_assoc();
 
 
 $badges_stmt = $conn->prepare("
@@ -55,9 +56,23 @@ $badges_stmt = $conn->prepare("
 $badges_stmt->bind_param("i", $user_id);
 $badges_stmt->execute();
 $badges = $badges_stmt->get_result();
+
+
+$history_stmt = $conn->prepare("
+    SELECT q.titel, uqs.score, uqs.total_questions, uqs.gespeeld_op
+    FROM user_quiz_scores uqs
+    JOIN quizzes q ON q.quiz_id = uqs.quiz_id
+    WHERE uqs.user_id = ?
+    ORDER BY uqs.gespeeld_op DESC
+    LIMIT 10
+");
+$history_stmt->bind_param("i", $user_id);
+$history_stmt->execute();
+$history = $history_stmt->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="nl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -88,11 +103,7 @@ $badges = $badges_stmt->get_result();
             background: white;
             padding: 18px;
             border-radius: 14px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.12);
-        }
-
-        .profile-header {
-            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
         }
 
         .profile-info h2 {
@@ -114,45 +125,36 @@ $badges = $badges_stmt->get_result();
             color: #1A3A5F;
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-        }
-
-        .stat-box {
+        .badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 10px;
             background: #EEF3F8;
-            padding: 12px;
-            border-radius: 10px;
+            border-radius: 12px;
+        }
+
+        .badge-square {
+            width: 100px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
             text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-
-        .stat-label {
-            font-size: 13px;
-            color: #555;
+        .badge-square-img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
         }
-
-        .stat-value {
-            font-size: 18px;
+        .badge-square-text {
+            margin-top: 6px;
+            font-size: 14px;
             font-weight: bold;
             color: #1A3A5F;
         }
 
-        .badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .badge {
-            background: #EEF3F8;
-            padding: 8px 12px;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 14px;
-        }
 
         .btn-row {
             margin-top: 20px;
@@ -190,58 +192,55 @@ $badges = $badges_stmt->get_result();
 
 <body>
 
-<header>Mijn account</header>
+    <header>Mijn account</header>
 
-<div class="container">
+    <div class="container">
 
-    <div class="profile-header">
         <div class="profile-info">
             <h2><?= htmlspecialchars($user['username']) ?></h2>
             <p>Lid sinds: <?= date('d-m-Y', strtotime($user['aangemaakt_op'])) ?></p>
         </div>
-    </div>
 
-    <div class="section">
-        <h3>Statistieken</h3>
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-label">Quizzes gespeeld</div>
-                <div class="stat-value"><?= intval($stats['quizzes_gespeeld'] ?? 0) ?></div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Gemiddelde score</div>
-                <div class="stat-value">
-                    <?= $stats['gemiddelde_score'] ? round($stats['gemiddelde_score'], 1) : 0 ?>
-                </div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Beste score</div>
-                <div class="stat-value"><?= intval($stats['beste_score'] ?? 0) ?></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="section">
-        <h3>Badges</h3>
         <div class="badges">
             <?php if ($badges->num_rows > 0): ?>
                 <?php while ($badge = $badges->fetch_assoc()): ?>
-                    <div class="badge">
-                        <?= htmlspecialchars($badge['badge_name']) ?>
+                    <div class="badge-square">
+                        <img src="<?= $badge['badge_icon'] ?>" alt="<?= $badge['badge_name'] ?>" class="badge-square-img">
+                        <p class="badge-square-text"><?= htmlspecialchars($badge['badge_name']) ?></p>
                     </div>
                 <?php endwhile; ?>
             <?php else: ?>
                 <p>Je hebt nog geen badges.</p>
             <?php endif; ?>
         </div>
-    </div>
 
-    <div class="btn-row">
-        <a href="quiz.overzicht.php" class="btn">Naar quiz overzicht</a>
-        <a href="logout.php" class="btn btn-secondary">Uitloggen</a>
-    </div>
 
-</div>
+
+        <div class="section">
+            <h3>Quizgeschiedenis</h3>
+
+            <?php if ($history->num_rows > 0): ?>
+                <ul>
+                    <?php while ($row = $history->fetch_assoc()): ?>
+                        <li>
+                            <?= htmlspecialchars($row['titel']) ?> —
+                            Score: <?= $row['score'] ?>/<?= $row['total_questions'] ?> —
+                            <?= date("d-m-Y H:i", strtotime($row['gespeeld_op'])) ?>
+                        </li>
+                    <?php endwhile; ?>
+                </ul>
+            <?php else: ?>
+                <p>Je hebt nog geen quizgeschiedenis.</p>
+            <?php endif; ?>
+        </div>
+
+        <div class="btn-row">
+            <a href="quiz.overzicht.php" class="btn">Naar quiz overzicht</a>
+            <a href="logout.php" class="btn btn-secondary">Uitloggen</a>
+        </div>
+
+    </div>
 
 </body>
+
 </html>
