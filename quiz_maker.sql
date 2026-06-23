@@ -73,4 +73,39 @@ CREATE TABLE leaderboard (
     FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE CASCADE
 );
 
+USE quizmaker;
+
+CREATE TABLE IF NOT EXISTS badges (
+    badge_id INT AUTO_INCREMENT PRIMARY KEY,
+    naam VARCHAR(255),
+    beschrijving TEXT,
+    icoon VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS user_badges (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    badge_id INT NOT NULL,
+    earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (badge_id) REFERENCES badges(badge_id) ON DELETE CASCADE
+);
+
+ALTER TABLE vragen 
+ADD COLUMN IF NOT EXISTS vraag_type ENUM('single','multiple') DEFAULT 'single';
+
+ALTER TABLE user_quiz_scores
+ADD COLUMN IF NOT EXISTS tijd INT DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS leaderboard (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    quiz_id INT NOT NULL,
+    score INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(quiz_id) ON DELETE CASCADE
+);
+
+
 
