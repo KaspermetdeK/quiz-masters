@@ -70,8 +70,8 @@ if ($index >= count($vragen_lijst)) {
             give_badge($conn, $user_id, "10 Quizzes");
         }
 
-        $stmt = $conn->prepare("INSERT INTO leaderboard (user_id, quiz_id, score) VALUES (?, ?, ?)");
-        $stmt->bind_param("iii", $user_id, $quiz_id, $score);
+        $stmt = $conn->prepare("INSERT INTO leaderboard (quiz_id, name, score, total) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("isdi", $quiz_id, $username, $score, $total);
         $stmt->execute();
     }
 
