@@ -261,10 +261,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         .time-spent {
-            font-size: 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #1A3A5F, #2D5B8C);
+            color: white;
+            padding: 12px 18px;
+            border-radius: 50px;
+            font-size: 20px;
             font-weight: bold;
-            color: #1A3A5F;
-            margin-bottom: 15px;
+            box-shadow: 0 6px 15px rgba(26, 58, 95, 0.3);
+            margin-bottom: 20px;
+            transition: transform 0.2s ease;
         }
 
         .progress-wrapper {
@@ -370,6 +378,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             document.getElementById("timeSpent").textContent =
                 Math.floor(timeSpent / 60) + ":" + String(timeSpent % 60).padStart(2, "0");
         }, 1000);
+        window.addEventListener("beforeunload", function () {
+            if (!quizBezig) {
+                document.cookie = "quiz_time=0; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "quiz_score=0; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            }
+        });
     </script>
 </body>
 
