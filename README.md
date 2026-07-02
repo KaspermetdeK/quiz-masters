@@ -40,16 +40,14 @@ Op de pagina **Quiz maken** kan een ingelogde gebruiker:
 
 ## Database
 
-De database zorgt ervoor dat alle gegevens van de website veilig worden opgeslagen en met elkaar verbonden zijn. In de database worden onder andere de volgende gegevens beheerd:
+De website maakt gebruik van een MySQL-database waarin alle gegevens worden opgeslagen. De database bevat onder andere:
 
 * Gebruikersaccounts en inloggegevens.
-* Aangemaakte quizzen.
+* Quizzen die door gebruikers zijn aangemaakt.
 * Vragen en antwoordmogelijkheden van iedere quiz.
 * Behaalde scores van gebruikers.
 * Verdiende badges.
 * De leaderboard met de hoogste scores.
-
-
 
 ## Belangrijkste functies
 
