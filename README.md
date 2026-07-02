@@ -38,6 +38,19 @@ Op de pagina **Quiz maken** kan een ingelogde gebruiker:
 * De quiz uploaden zodat deze later gespeeld kan worden.
 * Een bestaande quiz downloaden of aanpassen.
 
+## Database
+
+De database zorgt ervoor dat alle gegevens van de website veilig worden opgeslagen en met elkaar verbonden zijn. In de database worden onder andere de volgende gegevens beheerd:
+
+* Gebruikersaccounts en inloggegevens.
+* Aangemaakte quizzen.
+* Vragen en antwoordmogelijkheden van iedere quiz.
+* Behaalde scores van gebruikers.
+* Verdiende badges.
+* De leaderboard met de hoogste scores.
+
+
+
 ## Belangrijkste functies
 
 * Account aanmaken en inloggen.
