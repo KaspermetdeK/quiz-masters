@@ -48,7 +48,7 @@ De website maakt gebruik van een MySQL-database waarin alle gegevens worden opge
 * Behaalde scores van gebruikers.
 * Verdiende badges.
 * De leaderboard met de hoogste scores.
-
+* De database code staat in quiz_maken.sql
 ## Belangrijkste functies
 
 * Account aanmaken en inloggen.
